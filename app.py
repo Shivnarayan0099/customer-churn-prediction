@@ -1,0 +1,343 @@
+from flask import Flask, render_template, request, redirect
+import pandas as pd
+import joblib
+import sqlite3
+from datetime import datetime
+import matplotlib
+matplotlib.use('Agg')
+
+import matplotlib.pyplot as plt
+import os
+from flask import send_file
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
+from reportlab.lib import colors
+import csv
+from flask import Response
+
+
+app = Flask(__name__)
+
+model = joblib.load("models/logistic_model.pkl")
+
+
+@app.route("/")
+def home():
+    return render_template("index.html")
+
+@app.route("/predict", methods=["POST"])
+def predict():
+
+    user_data = {}
+
+    user_data["gender"] = int(request.form["gender"])
+    user_data["SeniorCitizen"] = int(request.form["SeniorCitizen"])
+    user_data["Partner"] = int(request.form["Partner"])
+    user_data["Dependents"] = int(request.form["Dependents"])
+    user_data["tenure"] = int(request.form["tenure"])
+    user_data["PhoneService"] = int(request.form["PhoneService"])
+    user_data["MultipleLines"] = int(request.form["MultipleLines"])
+    user_data["InternetService"] = int(request.form["InternetService"])
+    user_data["OnlineSecurity"] = int(request.form["OnlineSecurity"])
+    user_data["OnlineBackup"] = int(request.form["OnlineBackup"])
+    user_data["DeviceProtection"] = int(request.form["DeviceProtection"])
+    user_data["TechSupport"] = int(request.form["TechSupport"])
+    user_data["StreamingTV"] = int(request.form["StreamingTV"])
+    user_data["StreamingMovies"] = int(request.form["StreamingMovies"])
+    user_data["Contract"] = int(request.form["Contract"])
+    user_data["PaperlessBilling"] = int(request.form["PaperlessBilling"])
+    user_data["PaymentMethod"] = int(request.form["PaymentMethod"])
+    user_data["MonthlyCharges"] = float(request.form["MonthlyCharges"])
+    user_data["TotalCharges"] = float(request.form["TotalCharges"])
+
+    df = pd.DataFrame([user_data])
+
+    result = model.predict(df)
+    probability = model.predict_proba(df)
+
+    if result[0] == 1:
+        confidence = round(probability[0][1] * 100, 2)
+        output = "Customer Will Churn"
+        risk = "High 🔴"
+        color = "#dc3545"
+
+        recommendation = [
+            "Contact the customer immediately.",
+            "Offer a discount or special plan.",
+            "Suggest a yearly contract.",
+            "Provide better customer support."
+        ]
+
+    else:
+        confidence = round(probability[0][0] * 100, 2)
+        output = "Customer Will Not Churn"
+        risk = "Low 🟢"
+        color = "#28a745"
+
+        recommendation = [
+            "Customer is likely to stay.",
+            "Continue providing good service.",
+            "Offer loyalty rewards.",
+            "Maintain customer satisfaction."
+        ]
+
+    conn = sqlite3.connect("churn.db")
+    cursor = conn.cursor()
+
+    current_time = datetime.now().strftime("%d-%m-%Y %I:%M %p")
+
+    cursor.execute("""
+    INSERT INTO prediction_history(prediction, confidence, risk, date_time)
+    VALUES (?, ?, ?, ?)
+    """, (output, confidence, risk, current_time))
+
+    conn.commit()
+    conn.close()
+
+    return render_template(
+        "result.html",
+        prediction=output,
+        confidence=confidence,
+        risk=risk,
+        color=color,
+        recommendation=recommendation
+    )   
+    
+@app.route("/history")
+def history():
+
+    search = request.args.get("search")
+
+    conn = sqlite3.connect("churn.db")
+    cursor = conn.cursor()
+
+    if search:
+
+        cursor.execute("""
+        SELECT *
+        FROM prediction_history
+        WHERE CAST(id AS TEXT) LIKE ?
+        OR prediction LIKE ?
+        OR risk LIKE ?
+        OR date_time LIKE ?
+        ORDER BY id DESC
+        """, (
+            "%" + search + "%",
+            "%" + search + "%",
+            "%" + search + "%",
+            "%" + search + "%"
+        ))
+
+    else:
+
+        cursor.execute("""
+        SELECT *
+        FROM prediction_history
+        ORDER BY id DESC
+        """)
+
+    records = cursor.fetchall()
+
+    conn.close()
+
+    return render_template(
+        "history.html",
+        records=records
+    )
+
+@app.route("/clear")
+def clear():
+
+    conn = sqlite3.connect("churn.db")
+
+    cursor = conn.cursor()
+
+    cursor.execute("DELETE FROM prediction_history")
+
+    conn.commit()
+
+    conn.close()
+
+    return redirect("/history")
+
+
+@app.route("/export_pdf")
+def export_pdf():
+
+    conn = sqlite3.connect("churn.db")
+    cursor = conn.cursor()
+
+    cursor.execute("""
+    SELECT *
+    FROM prediction_history
+    ORDER BY id DESC
+    """)
+
+    records = cursor.fetchall()
+
+    conn.close()
+
+    pdf = SimpleDocTemplate("Prediction_History_Report.pdf")
+
+    data = []
+
+    data.append([
+        "ID",
+        "Prediction",
+        "Confidence",
+        "Risk",
+        "Date & Time"
+    ])
+
+    for row in records:
+
+        data.append([
+            row[0],
+            row[1],
+            str(row[2]) + "%",
+            row[3],
+            row[4]
+        ])
+
+    table = Table(data)
+
+    table.setStyle(TableStyle([
+
+        ("BACKGROUND",(0,0),(-1,0),colors.blue),
+        ("TEXTCOLOR",(0,0),(-1,0),colors.white),
+        ("GRID",(0,0),(-1,-1),1,colors.black),
+        ("BACKGROUND",(0,1),(-1,-1),colors.beige),
+        ("ALIGN",(0,0),(-1,-1),"CENTER"),
+        ("BOTTOMPADDING",(0,0),(-1,0),10)
+
+    ]))
+
+    pdf.build([table])
+
+    return send_file(
+        "Prediction_History_Report.pdf",
+        as_attachment=True
+    )
+
+
+@app.route("/export_csv")
+def export_csv():
+
+    conn = sqlite3.connect("churn.db")
+    cursor = conn.cursor()
+
+    cursor.execute("""
+    SELECT *
+    FROM prediction_history
+    ORDER BY id DESC
+    """)
+
+    records = cursor.fetchall()
+    conn.close()
+
+    def generate():
+
+        yield "ID,Prediction,Confidence,Risk,Date & Time\n"
+
+        for row in records:
+            yield f"{row[0]},{row[1]},{row[2]}%,{row[3]},{row[4]}\n"
+
+    return Response(
+        generate(),
+        mimetype="text/csv",
+        headers={
+            "Content-Disposition":
+            "attachment;filename=Prediction_History.csv"
+        }
+    )
+
+@app.route("/dashboard")
+def dashboard():
+
+    conn = sqlite3.connect("churn.db")
+
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT COUNT(*) FROM prediction_history")
+    total = cursor.fetchone()[0]
+
+    cursor.execute("""
+    SELECT COUNT(*)
+    FROM prediction_history
+    WHERE prediction='Customer Will Churn'
+    """)
+    churn = cursor.fetchone()[0]
+
+    cursor.execute("""
+    SELECT COUNT(*)
+    FROM prediction_history
+    WHERE prediction='Customer Will Not Churn'
+    """)
+    not_churn = cursor.fetchone()[0]
+
+    cursor.execute("""
+    SELECT ROUND(AVG(confidence),2)
+    FROM prediction_history
+    """)
+    avg_confidence = cursor.fetchone()[0]
+
+    if avg_confidence is None:
+        avg_confidence = 0
+
+    labels = ["Not Churn", "Churn"]
+    sizes = [not_churn, churn]
+    colors = ["green", "red"]
+
+    plt.figure(figsize=(5,5))
+
+    if total > 0:
+        plt.pie(
+            sizes,
+            labels=labels,
+            colors=colors,
+            autopct="%1.1f%%",
+            startangle=90
+        )
+    else:
+        plt.text(
+            0.5,
+            0.5,
+            "No Data Available",
+            ha="center",
+            va="center",
+            fontsize=16
+        )
+
+     
+    if not os.path.exists("static"):
+        os.makedirs("static")
+
+    plt.savefig("static/pie_chart.png")
+    plt.close()
+
+    plt.figure(figsize=(5,4))
+
+    plt.bar(
+        ["Not Churn", "Churn"],
+        [not_churn, churn],
+        color=["green", "red"]
+    )
+
+    plt.title("Customer Churn Count")
+    plt.ylabel("Customers")
+
+    plt.savefig("static/bar_chart.png")
+    plt.close()
+
+
+    conn.close()
+
+    return render_template(
+        "dashboard.html",
+        total=total,
+        churn=churn,
+        not_churn=not_churn,
+        avg_confidence=avg_confidence
+    )
+    
+if __name__ == "__main__": 
+    app.run(debug=True)

@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+    <title>Prediction History</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+    <style>
+
+        table {
+            width: 90%;
+            margin: auto;
+            border-collapse: collapse;
+            margin-top: 40px;
+        }
+
+        th {
+            background: #0d6efd;
+            color: white;
+            padding: 15px;
+        }
+
+        td {
+            padding: 12px;
+            text-align: center;
+            border-bottom: 1px solid #ddd;
+        }
+
+        tr:nth-child(even) {
+            background: #f2f2f2;
+        }
+
+        .btn-container {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 30px;
+            flex-wrap: wrap;
+        }
+
+        .btn-container a {
+            text-decoration: none;
+        }
+
+        .btn-container button {
+            padding: 12px 30px;
+            font-size: 16px;
+            border: none;
+            border-radius: 8px;
+            background: #0d6efd;
+            color: white;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .btn-container button:hover {
+            background: #0b5ed7;
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>Prediction History</h1>
+     
+    <form action="/history" method="GET">
+
+<div style="text-align:center;margin-top:25px;">
+
+<input
+type="text"
+name="search"
+placeholder="Search by ID, Prediction, Risk or Date"
+style="
+width:300px;
+padding:12px;
+border-radius:8px;
+border:1px solid #ccc;
+font-size:16px;">
+
+<button
+type="submit"
+style="
+padding:12px 20px;
+background:#0d6efd;
+color:white;
+border:none;
+border-radius:8px;
+cursor:pointer;">
+
+🔍 Search
+
+</button>
+
+</div>
+
+</form>
+
+<br>
+
+    <table>
+
+        <tr>
+
+<th>ID</th>
+<th>Prediction</th>
+<th>Confidence</th>
+<th>Risk</th>
+<th>Date & Time</th>
+<th>Action</th>
+
+</tr>
+
+        {% for row in records %}
+
+        <tr>
+
+<td>{{ row[0] }}</td>
+
+<td>{{ row[1] }}</td>
+
+<td>{{ row[2] }}%</td>
+
+<td>{{ row[3] }}</td>
+
+<td>{{ row[4] }}</td>
+
+<td>
+
+<a href="/delete/{{ row[0] }}"
+onclick="return confirm('Delete this record?')">
+
+<button
+style="background:#dc3545;color:white;border:none;padding:8px 15px;border-radius:5px;cursor:pointer;">
+
+🗑 Delete
+
+</button>
+
+</a>
+
+</td>
+
+</tr>
+
+        {% endfor %}
+
+    </table>
+
+    <div class="btn-container">
+
+    <a href="/">
+        <button>🏠 Home</button>
+    </a>
+
+    <a href="/dashboard">
+        <button>📊 Dashboard</button>
+    </a>
+
+    <a href="/clear"
+       onclick="return confirm('Delete all prediction history?')">
+        <button style="background:#dc3545;">
+            🧹 Clear All
+        </button>
+    </a>
+
+    <a href="/export_pdf">
+        <button style="background:#198754;">
+            📄 Export PDF
+        </button>
+    </a>
+    
+     <a href="/export_csv">
+    <button style="background:#17a2b8;">
+        📥 Export CSV
+    </button>
+</a>
+</div>
+ 
+
+</div>
+
+</body>
+</html>

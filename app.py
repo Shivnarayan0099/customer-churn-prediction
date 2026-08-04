@@ -94,13 +94,13 @@ def predict():
     conn.close()
 
     return render_template(
-        "result.html",
-        prediction=output,
-        confidence=confidence,
-        risk=risk,
-        color=color,
-        recommendation=recommendation
-    )   
+    "result.html",
+    prediction=output,
+    confidence=confidence,
+    risk=risk,
+    color=color,
+    recommendation=recommendation
+)
     
 @app.route("/history")
 def history():
@@ -249,17 +249,17 @@ def export_csv():
             "attachment;filename=Prediction_History.csv"
         }
     )
-
 @app.route("/dashboard")
 def dashboard():
 
     conn = sqlite3.connect("churn.db")
-
     cursor = conn.cursor()
 
+    # Total Predictions
     cursor.execute("SELECT COUNT(*) FROM prediction_history")
     total = cursor.fetchone()[0]
 
+    # Churn Count
     cursor.execute("""
     SELECT COUNT(*)
     FROM prediction_history
@@ -267,6 +267,7 @@ def dashboard():
     """)
     churn = cursor.fetchone()[0]
 
+    # Not Churn Count
     cursor.execute("""
     SELECT COUNT(*)
     FROM prediction_history
@@ -274,6 +275,7 @@ def dashboard():
     """)
     not_churn = cursor.fetchone()[0]
 
+    # Average Confidence
     cursor.execute("""
     SELECT ROUND(AVG(confidence),2)
     FROM prediction_history
@@ -283,6 +285,40 @@ def dashboard():
     if avg_confidence is None:
         avg_confidence = 0
 
+    # Highest Confidence Prediction
+    cursor.execute("""
+    SELECT prediction, confidence
+    FROM prediction_history
+    ORDER BY confidence DESC
+    LIMIT 1
+    """)
+
+    top_prediction = cursor.fetchone()
+
+    if top_prediction:
+        top_prediction_name = top_prediction[0]
+        top_prediction_confidence = top_prediction[1]
+    else:
+        top_prediction_name = "No Data"
+        top_prediction_confidence = 0
+
+    # Recent Predictions
+    cursor.execute("""
+    SELECT
+        id,
+        CASE
+            WHEN prediction='Customer Will Churn' THEN 'Churn'
+            ELSE 'Not Churn'
+        END AS prediction,
+        confidence
+    FROM prediction_history
+    ORDER BY id DESC
+    LIMIT 5
+    """)
+
+    recent_predictions = cursor.fetchall()
+
+    # Pie Chart
     labels = ["Not Churn", "Churn"]
     sizes = [not_churn, churn]
     colors = ["green", "red"]
@@ -307,19 +343,19 @@ def dashboard():
             fontsize=16
         )
 
-     
     if not os.path.exists("static"):
         os.makedirs("static")
 
     plt.savefig("static/pie_chart.png")
     plt.close()
 
+    # Bar Chart
     plt.figure(figsize=(5,4))
 
     plt.bar(
         ["Not Churn", "Churn"],
         [not_churn, churn],
-        color=["green", "red"]
+        color=["green","red"]
     )
 
     plt.title("Customer Churn Count")
@@ -328,6 +364,46 @@ def dashboard():
     plt.savefig("static/bar_chart.png")
     plt.close()
 
+    # Trend Chart
+    cursor.execute("""
+    SELECT
+    substr(date_time,1,10),
+    COUNT(*)
+    FROM prediction_history
+    GROUP BY substr(date_time,1,10)
+    ORDER BY substr(date_time,7,4),
+    substr(date_time,4,2),
+    substr(date_time,1,2)
+    """)
+
+    trend = cursor.fetchall()
+
+    dates = []
+    counts = []
+
+    for row in trend:
+        dates.append(row[0])
+        counts.append(row[1])
+
+    plt.figure(figsize=(7,4))
+
+    plt.plot(
+        dates,
+        counts,
+        marker="o",
+        linewidth=3
+    )
+
+    plt.title("Prediction Trend")
+    plt.xlabel("Date")
+    plt.ylabel("Predictions")
+
+    plt.grid(True)
+    plt.xticks(rotation=20)
+    plt.tight_layout()
+
+    plt.savefig("static/trend_chart.png")
+    plt.close()
 
     conn.close()
 
@@ -336,7 +412,10 @@ def dashboard():
         total=total,
         churn=churn,
         not_churn=not_churn,
-        avg_confidence=avg_confidence
+        avg_confidence=avg_confidence,
+        recent_predictions=recent_predictions,
+        top_prediction_name=top_prediction_name,
+        top_prediction_confidence=top_prediction_confidence
     )
     
 if __name__ == "__main__": 

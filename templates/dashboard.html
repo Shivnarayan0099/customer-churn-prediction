@@ -13,43 +13,40 @@
         .card{
 
             width:400px;
-
             margin:20px auto;
-
             padding:25px;
-
             background:white;
-
             border-radius:15px;
-
             box-shadow:0 5px 15px rgba(0,0,0,.15);
-
             font-size:28px;
-
             font-weight:bold;
-
             text-align:center;
+
+        }
+
+        .recent-card{
+
+            width:90%;
+            max-width:900px;
+            margin:30px auto;
 
         }
 
         .card img{
 
             margin-top:15px;
-
             border-radius:10px;
+            max-width:100%;
+            height:auto;
 
         }
 
         .btn-container{
 
             display:flex;
-
             justify-content:center;
-
             gap:20px;
-
             flex-wrap:wrap;
-
             margin-top:30px;
 
         }
@@ -63,19 +60,12 @@
         .btn-container button{
 
             padding:12px 25px;
-
             font-size:16px;
-
             border:none;
-
             border-radius:8px;
-
             background:#0d6efd;
-
             color:white;
-
             cursor:pointer;
-
             transition:.3s;
 
         }
@@ -83,6 +73,39 @@
         .btn-container button:hover{
 
             background:#0b5ed7;
+
+        }
+
+        table{
+
+            width:100%;
+            border-collapse:collapse;
+            margin-top:20px;
+
+        }
+
+        th{
+
+            background:#0d6efd;
+            color:white;
+            padding:14px;
+            font-size:20px;
+
+        }
+
+        td{
+
+            padding:14px;
+            border-bottom:1px solid #ddd;
+            text-align:center;
+            font-size:18px;
+            white-space:nowrap;
+
+        }
+
+        tr:nth-child(even){
+
+            background:#f8f9fa;
 
         }
 
@@ -138,6 +161,18 @@
 
 <div class="card">
 
+🏆 Highest Confidence Prediction
+
+<br><br>
+
+<h3>{{ top_prediction_name }}</h3>
+
+<p>{{ top_prediction_confidence }}%</p>
+
+</div>
+
+<div class="card">
+
 <h2>Customer Churn Distribution</h2>
 
 <img
@@ -145,15 +180,62 @@ src="{{ url_for('static', filename='pie_chart.png') }}?{{ total }}"
 width="320">
 
 </div>
+
 <div class="card">
 
-    <h2>Customer Churn Count</h2>
+<h2>Customer Churn Count</h2>
 
-    <img
-    src="{{ url_for('static', filename='bar_chart.png') }}"
-    width="350">
+<img
+src="{{ url_for('static', filename='bar_chart.png') }}"
+width="350">
 
 </div>
+
+<div class="card">
+
+<h2>📈 Prediction Trend</h2>
+
+<img
+src="{{ url_for('static', filename='trend_chart.png') }}?{{ total }}"
+width="350"
+alt="Prediction Trend">
+
+</div>
+
+<div class="card recent-card">
+
+<h2>📋 Recent Predictions</h2>
+
+<table>
+
+<tr>
+
+<th>ID</th>
+
+<th>Prediction</th>
+
+<th>Confidence</th>
+
+</tr>
+
+{% for row in recent_predictions %}
+
+<tr>
+
+<td>{{ row[0] }}</td>
+
+<td>{{ row[1] }}</td>
+
+<td>{{ row[2] }}%</td>
+
+</tr>
+
+{% endfor %}
+
+</table>
+
+</div>
+
 <div class="btn-container">
 
 <a href="/history">

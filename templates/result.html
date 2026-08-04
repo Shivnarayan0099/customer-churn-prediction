@@ -1,179 +1,192 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
 
-    <title>Prediction Result</title>
+<meta charset="UTF-8">
 
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0">
 
-    <style>
+<title>Prediction Result</title>
 
-        .card{
-            width:600px;
-            margin:30px auto;
-            background:white;
-            border-radius:15px;
-            padding:30px;
-            box-shadow:0 5px 15px rgba(0,0,0,.2);
-            text-align:center;
-        }
+<link rel="preconnect"
+href="https://fonts.googleapis.com">
 
-        .prediction{
-            font-size:32px;
-            font-weight:bold;
-            margin-bottom:20px;
-        }
+<link rel="preconnect"
+href="https://fonts.gstatic.com"
+crossorigin>
 
-        .confidence{
-            font-size:22px;
-            margin-top:20px;
-        }
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+rel="stylesheet">
 
-        .risk{
-            font-size:22px;
-            margin-top:20px;
-        }
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css">
 
-        .progress{
-            width:100%;
-            background:#ddd;
-            border-radius:20px;
-            overflow:hidden;
-            height:25px;
-            margin-top:15px;
-        }
-
-        .progress-bar{
-            height:25px;
-            color:white;
-            font-weight:bold;
-            line-height:25px;
-        }
-
-        .recommendation{
-            margin-top:30px;
-            text-align:left;
-            background:#f8f9fa;
-            padding:20px;
-            border-radius:10px;
-        }
-
-        .recommendation h2{
-            text-align:center;
-        }
-
-        .recommendation ul{
-            font-size:18px;
-        }
-
-        .btn-container{
-            display:flex;
-            justify-content:center;
-            gap:20px;
-            flex-wrap:wrap;
-            margin-top:30px;
-        }
-
-        .btn-container a{
-            text-decoration:none;
-        }
-
-        .btn-container button{
-            padding:12px 25px;
-            font-size:16px;
-            border:none;
-            border-radius:8px;
-            background:#0d6efd;
-            color:white;
-            cursor:pointer;
-            transition:.3s;
-        }
-
-        .btn-container button:hover{
-            background:#0b5ed7;
-        }
-
-    </style>
+<link rel="stylesheet"
+href="{{ url_for('static', filename='style.css') }}">
 
 </head>
 
 <body>
 
-<div class="card">
+<div class="background-overlay"></div>
 
-    <h1>Prediction Result</h1>
+<div class="container result-card">
 
-    <div class="prediction" style="color:{{ color }}">
+<h2>
 
-        {{ prediction }}
+<i class="fa-solid fa-chart-line"></i>
 
-    </div>
+Prediction Result
 
-    {% if prediction == "Customer Will Not Churn" %}
+</h2>
 
-        <h2>✔ Customer is Stable</h2>
+<div class="prediction"
 
-    {% else %}
+style="color:{{ color }};">
 
-        <h2>⚠ High Churn Risk</h2>
+{{ prediction }}
 
-    {% endif %}
+</div>
 
-    <div class="confidence">
+{% if prediction=="Customer Will Not Churn" %}
 
-        Confidence : <b>{{ confidence }}%</b>
+<div class="risk">
 
-    </div>
+🟢 Stable Customer
 
-    <div class="progress">
+</div>
 
-        <div class="progress-bar"
-             style="width:{{ confidence }}%; background:{{ color }};">
+{% else %}
 
-            {{ confidence }}%
+<div class="risk">
 
-        </div>
+🔴 High Churn Risk
 
-    </div>
+</div>
 
-    <div class="risk">
+{% endif %}
 
-        Risk Level : <b>{{ risk }}</b>
+<div class="confidence">
 
-    </div>
+Confidence Score
 
-    <div class="recommendation">
+</div>
 
-        <h2>Recommendations</h2>
+<div
+style="font-size:34px;
+font-weight:700;
+margin-top:10px;">
 
-        <ul>
+{{ confidence }}%
 
-            {% for item in recommendation %}
+</div>
 
-            <li>{{ item }}</li>
+<div class="progress">
 
-            {% endfor %}
+<div class="progress-bar"
 
-        </ul>
+style="width:{{ confidence }}%;">
 
-    </div>
+</div>
 
-    <div class="btn-container">
+</div>
 
-        <a href="/">
-            <button>🏠 Home</button>
-        </a>
+<div style="margin-top:20px;
+font-size:22px;">
 
-        <a href="/history">
-            <button>📜 History</button>
-        </a>
+Risk Level :
 
-        <a href="/dashboard">
-            <button>📊 Dashboard</button>
-        </a>
+<b style="color:{{ color }}">
 
-    </div>
+{{ risk }}
+
+</b>
+
+</div>
+
+<div class="recommendation">
+
+<h2>
+
+<i class="fa-solid fa-lightbulb"></i>
+
+AI Recommendations
+
+</h2>
+
+<div class="recommendation-list">
+
+{% for item in recommendation %}
+
+<div class="recommendation-item">
+
+<div class="recommendation-icon">
+
+<i class="fa-solid fa-circle-check"></i>
+
+</div>
+
+<div class="recommendation-text">
+
+{{ item }}
+
+</div>
+
+</div>
+
+{% endfor %}
+
+</div>
+
+</div>
+
+<div class="button-group">
+
+<a href="/" class="nav-btn">
+
+<i class="fa-solid fa-house"></i>
+
+Home
+
+</a>
+
+<a href="/history" class="nav-btn">
+
+<i class="fa-solid fa-clock-rotate-left"></i>
+
+History
+
+</a>
+
+<a href="/dashboard" class="nav-btn">
+
+<i class="fa-solid fa-chart-column"></i>
+
+Dashboard
+
+</a>
+
+</div>
+
+<div class="footer">
+
+<p>
+
+<i class="fa-solid fa-brain"></i>
+
+Prediction generated using Machine Learning
+
+</p>
+
+<p style="margin-top:8px;">
+
+Powered by Flask • Scikit-learn • SQLite
+
+</p>
+
+</div>
 
 </div>
 

@@ -302,6 +302,15 @@ def dashboard():
         top_prediction_name = "No Data"
         top_prediction_confidence = 0
 
+    # Prediction Insights
+
+    if total > 0:
+        churn_rate = round((churn / total) * 100, 2)
+        retention_rate = round((not_churn / total) * 100, 2)
+    else:
+        churn_rate = 0
+        retention_rate = 0
+
     # Recent Predictions
     cursor.execute("""
     SELECT
@@ -408,15 +417,17 @@ def dashboard():
     conn.close()
 
     return render_template(
-        "dashboard.html",
-        total=total,
-        churn=churn,
-        not_churn=not_churn,
-        avg_confidence=avg_confidence,
-        recent_predictions=recent_predictions,
-        top_prediction_name=top_prediction_name,
-        top_prediction_confidence=top_prediction_confidence
-    )
+    "dashboard.html",
+    total=total,
+    churn=churn,
+    not_churn=not_churn,
+    avg_confidence=avg_confidence,
+    recent_predictions=recent_predictions,
+    top_prediction_name=top_prediction_name,
+    top_prediction_confidence=top_prediction_confidence,
+    churn_rate=churn_rate,
+    retention_rate=retention_rate
+)
     
 if __name__ == "__main__": 
     app.run(debug=True)

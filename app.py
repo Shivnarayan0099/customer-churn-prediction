@@ -4,6 +4,7 @@ import joblib
 import sqlite3
 from datetime import datetime
 import matplotlib
+import numpy as np
 matplotlib.use('Agg')
 
 import matplotlib.pyplot as plt
@@ -19,6 +20,60 @@ app = Flask(__name__)
 
 model = joblib.load("models/logistic_model.pkl")
 
+def create_feature_importance():
+
+    feature_names = [
+        "Gender",
+        "Senior Citizen",
+        "Partner",
+        "Dependents",
+        "Tenure",
+        "Phone Service",
+        "Multiple Lines",
+        "Internet Service",
+        "Online Security",
+        "Online Backup",
+        "Device Protection",
+        "Tech Support",
+        "Streaming TV",
+        "Streaming Movies",
+        "Contract",
+        "Paperless Billing",
+        "Payment Method",
+        "Monthly Charges",
+        "Total Charges"
+    ]
+
+    coefficients = model.coef_[0]
+
+    importance = np.abs(coefficients)
+
+    feature_data = list(zip(feature_names, importance))
+
+    feature_data.sort(key=lambda x: x[1], reverse=True)
+
+    top_features = feature_data[:10]
+
+    names = [x[0] for x in top_features]
+    values = [x[1] for x in top_features]
+
+    plt.figure(figsize=(8,5))
+
+    plt.barh(
+        names[::-1],
+        values[::-1]
+    )
+
+    plt.title("Top 10 Feature Importance")
+    plt.xlabel("Importance")
+
+    plt.tight_layout()
+
+    if not os.path.exists("static"):
+        os.makedirs("static")
+
+    plt.savefig("static/feature_importance.png")
+    plt.close()
 
 @app.route("/")
 def home():
@@ -413,7 +468,7 @@ def dashboard():
 
     plt.savefig("static/trend_chart.png")
     plt.close()
-
+    create_feature_importance()
     conn.close()
 
     return render_template(

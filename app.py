@@ -46,11 +46,9 @@ def create_feature_importance():
 
     coefficients = model.coef_[0]
 
-    importance = np.abs(coefficients)
+    feature_data = list(zip(feature_names, coefficients))
 
-    feature_data = list(zip(feature_names, importance))
-
-    feature_data.sort(key=lambda x: x[1], reverse=True)
+    feature_data.sort(key=lambda x: abs(x[1]), reverse=True)
 
     top_features = feature_data[:10]
 
@@ -64,15 +62,24 @@ def create_feature_importance():
         values[::-1]
     )
 
-    plt.title("Top 10 Feature Importance")
-    plt.xlabel("Importance")
+    plt.axvline(
+        0,
+        linewidth=1
+    )
+
+    plt.title("Top 10 Feature Impact")
+    plt.xlabel("Coefficient Impact")
 
     plt.tight_layout()
 
     if not os.path.exists("static"):
         os.makedirs("static")
 
-    plt.savefig("static/feature_importance.png")
+    plt.savefig(
+        "static/feature_importance.png",
+        dpi=150
+    )
+
     plt.close()
 
 @app.route("/")

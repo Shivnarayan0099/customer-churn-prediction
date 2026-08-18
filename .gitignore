@@ -3,7 +3,7 @@ __pycache__/
 *.pyc
 *.pyo
 *.db-journal
-
+churn.db
 Prediction_History_Report.pdf
 
 static/pie_chart.png

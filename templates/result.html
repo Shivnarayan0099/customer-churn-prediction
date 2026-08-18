@@ -95,6 +95,137 @@ style="width:{{ confidence }}%;">
 
 <div style="margin-top:20px;
 font-size:22px;">
+<div class="recommendation">
+
+    <h2>
+        <i class="fa-solid fa-brain"></i>
+        Why this prediction?
+    </h2>
+
+    <p style="
+        text-align:center;
+        color:#94a3b8;
+        margin-bottom:25px;
+    ">
+        Key factors influencing the model's prediction
+    </p>
+
+    {% set positive_features = [] %}
+    {% set negative_features = [] %}
+
+    {% for feature, impact in top_shap_features %}
+
+        {% if impact > 0 %}
+
+            {% set _ = positive_features.append((feature, impact)) %}
+
+        {% else %}
+
+            {% set _ = negative_features.append((feature, impact)) %}
+
+        {% endif %}
+
+    {% endfor %}
+
+
+    {% if positive_features %}
+
+    <h3 style="
+        color:#ff6b6b;
+        margin:20px 0 15px;
+    ">
+
+        <i class="fa-solid fa-arrow-trend-up"></i>
+
+        Factors increasing churn risk
+
+    </h3>
+
+    {% for feature, impact in positive_features %}
+
+    <div style="
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        gap:20px;
+        padding:16px 20px;
+        margin:10px 0;
+        background:rgba(220,53,69,.10);
+        border:1px solid rgba(220,53,69,.20);
+        border-radius:12px;
+    ">
+
+        <strong>
+
+            {{ feature }}
+
+        </strong>
+
+        <span style="
+            color:#ff6b6b;
+            font-weight:600;
+        ">
+
+            ↑ Churn Risk
+
+        </span>
+
+    </div>
+
+    {% endfor %}
+
+    {% endif %}
+
+
+    {% if negative_features %}
+
+    <h3 style="
+        color:#4ade80;
+        margin:25px 0 15px;
+    ">
+
+        <i class="fa-solid fa-arrow-trend-down"></i>
+
+        Factors reducing churn risk
+
+    </h3>
+
+    {% for feature, impact in negative_features %}
+
+    <div style="
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        gap:20px;
+        padding:16px 20px;
+        margin:10px 0;
+        background:rgba(34,197,94,.10);
+        border:1px solid rgba(34,197,94,.20);
+        border-radius:12px;
+    ">
+
+        <strong>
+
+            {{ feature }}
+
+        </strong>
+
+        <span style="
+            color:#4ade80;
+            font-weight:600;
+        ">
+
+            ↓ Churn Risk
+
+        </span>
+
+    </div>
+
+    {% endfor %}
+
+    {% endif %}
+
+</div>
 
 Risk Level :
 
@@ -112,7 +243,7 @@ Risk Level :
 
 <i class="fa-solid fa-lightbulb"></i>
 
-AI Recommendations
+<h2>Recommended Actions</h2>
 
 </h2>
 

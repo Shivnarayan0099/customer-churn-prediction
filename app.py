@@ -5,6 +5,7 @@ import sqlite3
 from datetime import datetime
 import matplotlib
 import numpy as np
+import shap
 matplotlib.use('Agg')
 
 import matplotlib.pyplot as plt
@@ -19,7 +20,7 @@ from flask import Response
 app = Flask(__name__)
 
 model = joblib.load("models/logistic_model.pkl")
-
+explainer = shap.LinearExplainer(model, model.coef_)
 def create_feature_importance():
 
     feature_names = [
@@ -87,6 +88,7 @@ def home():
     return render_template("index.html")
 
 @app.route("/predict", methods=["POST"])
+@app.route("/predict", methods=["POST"])
 def predict():
 
     user_data = {}
@@ -116,7 +118,28 @@ def predict():
     result = model.predict(df)
     probability = model.predict_proba(df)
 
+    shap_values = explainer.shap_values(df)
+
+    if isinstance(shap_values, list):
+        shap_values = shap_values[0]
+
+    feature_names = df.columns.tolist()
+
+    feature_impact = list(
+        zip(feature_names, shap_values[0])
+    )
+
+    feature_impact.sort(
+        key=lambda x: abs(x[1]),
+        reverse=True
+    )
+
+    top_shap_features = feature_impact[:5]
+
+    #print("SHAP:", top_shap_features)
+    
     if result[0] == 1:
+
         confidence = round(probability[0][1] * 100, 2)
         output = "Customer Will Churn"
         risk = "High 🔴"
@@ -130,6 +153,7 @@ def predict():
         ]
 
     else:
+
         confidence = round(probability[0][0] * 100, 2)
         output = "Customer Will Not Churn"
         risk = "Low 🟢"
@@ -141,7 +165,8 @@ def predict():
             "Offer loyalty rewards.",
             "Maintain customer satisfaction."
         ]
-
+    #print("Prediction:", output)
+    #print("Classes:", model.classes_)
     conn = sqlite3.connect("churn.db")
     cursor = conn.cursor()
 
@@ -156,13 +181,14 @@ def predict():
     conn.close()
 
     return render_template(
-    "result.html",
-    prediction=output,
-    confidence=confidence,
-    risk=risk,
-    color=color,
-    recommendation=recommendation
-)
+        "result.html",
+        prediction=output,
+        confidence=confidence,
+        risk=risk,
+        color=color,
+        recommendation=recommendation,
+        top_shap_features=top_shap_features
+    )
     
 @app.route("/history")
 def history():
